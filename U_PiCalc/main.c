@@ -113,25 +113,25 @@ void controllerTask(void* pvParameters) {
 			vDisplayWriteStringAtPos(1,0, "%s", pistring);
 		}
 		if(getButtonPress(BUTTON2) == SHORT_PRESSED) {
-			
+				xEventGroupSetBits(Picalculating, PICALC_BUTTON2_SHORT);	
 		}
 		if(getButtonPress(BUTTON3) == SHORT_PRESSED) {
-			
+				xEventGroupSetBits(Picalculating, PICALC_BUTTON3_SHORT);
 		}
 		if(getButtonPress(BUTTON4) == SHORT_PRESSED) {
-			
+				xEventGroupSetBits(Picalculating, PICALC_BUTTON4_SHORT);
 		}
 		if(getButtonPress(BUTTON1) == LONG_PRESSED) {
-			
+				xEventGroupSetBits(Picalculating, PICALC_BUTTON1_LONG);
 		}
 		if(getButtonPress(BUTTON2) == LONG_PRESSED) {
-			
+				xEventGroupSetBits(Picalculating, PICALC_BUTTON2_LONG);
 		}
 		if(getButtonPress(BUTTON3) == LONG_PRESSED) {
-			
+				xEventGroupSetBits(Picalculating, PICALC_BUTTON3_LONG);
 		}
 		if(getButtonPress(BUTTON4) == LONG_PRESSED) {
-			
+				xEventGroupSetBits(Picalculating, PICALC_BUTTON4_LONG);
 		}
 		vTaskDelay(10/portTICK_RATE_MS);
 	}
