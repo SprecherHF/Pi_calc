@@ -36,18 +36,42 @@ float pisqr;
 
 void leibniz_task(void* pvParameters);
 void euler_task(void* pvParameters);
+void compare_Pi(void* pvParameters);
 void controllerTask(void* pvParameters);
+
+//Eventgroup und definitionen für PI Berechnungen
+
+#define PICALC_ACTIVE					1 << 0
+#define PICALC_ALGO1					1 << 1
+#define PICALC_ALGO2					1 << 2
+#define PICALC_BUTTON1_SHORT			1 << 3
+#define PICALC_BUTTON1_LONG				1 << 4
+#define PICALC_BUTTON2_SHORT			1 << 5
+#define PICALC_BUTTON2_LONG				1 << 6
+#define PICALC_BUTTON3_SHORT			1 << 7
+#define PICALC_BUTTON3_LONG				1 << 8
+#define PICALC_BUTTON4_SHORT			1 << 9
+#define PICALC_BUTTON4_LONG				1 << 10
+#define PICALC_BUTTON_ALL
+
+EventGroupHandle_t Picalculating;
+
+
 
 int main(void)
 {
     vInitClock();
 	vInitDisplay();
 	
+	Picalculating = xEventGroupCreate();
+	
 	xTaskCreate( controllerTask, (const char *) "control_tsk", configMINIMAL_STACK_SIZE+150, NULL, 3, NULL);
 	//xTaskCreate( leibniz_task, (const char *) "Leibniz_PI", configMINIMAL_STACK_SIZE+150, NULL, 1,NULL);
 	xTaskCreate( euler_task, (const char *) "Euler_PI", configMINIMAL_STACK_SIZE+150, NULL, 1,NULL);
 	vDisplayClear();
 	vDisplayWriteStringAtPos(0,0,"PI-Calc ASP");
+	vDisplayWriteStringAtPos(2,0,"Algo waehlen");
+	vDisplayWriteStringAtPos(3,0,"Leib - Euler");
 	
 	vTaskStartScheduler();
 	return 0;
