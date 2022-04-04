@@ -66,51 +66,34 @@ int main(void)
 	Picalculating = xEventGroupCreate();
 	
 	xTaskCreate( controllerTask, (const char *) "control_tsk", configMINIMAL_STACK_SIZE+150, NULL, 3, NULL);
-	//xTaskCreate( leibniz_task, (const char *) "Leibniz_PI", configMINIMAL_STACK_SIZE+150, NULL, 1,NULL);
+	xTaskCreate( leibniz_task, (const char *) "Leibniz_PI", configMINIMAL_STACK_SIZE+150, NULL, 1,NULL);
 	xTaskCreate( euler_task, (const char *) "Euler_PI", configMINIMAL_STACK_SIZE+150, NULL, 1,NULL);
 	vDisplayClear();
 	vDisplayWriteStringAtPos(0,0,"PI-Calc ASP");
-	vDisplayWriteStringAtPos(2,0,"Algo waehlen");
-	vDisplayWriteStringAtPos(3,0,"Leib - Euler");
+	//vDisplayWriteStringAtPos(2,0,"Algo waehlen");
+	//vDisplayWriteStringAtPos(3,0,"Leib - Euler");
 	
 	vTaskStartScheduler();
 	return 0;
 }
 
-void leibniz_task(void* pvParameters) {
-	pi4 = 1;
-	uint32_t zaehler = 3;
-	float pi = 0;
-	for(;;) {
-		pi4 = pi4 - (1.0 / zaehler);
-		zaehler += 2;
-		pi4 = pi4 + (1.0 / zaehler);
-		zaehler += 2;
-		pi = pi4 * 4;
-	}
-}
-
-void euler_task(void* pvParameters) {
-	uint32_t x = 1;
-	float zaehler;
-	float pi = 0;
-	for(;;) {
-		zaehler = pow(x,2);
-		pisqr = pisqr + (1.0 / zaehler);
-		x += 1;
-		pi = sqrt(pisqr * 6);
-	}
-}
-
-
 void controllerTask(void* pvParameters) {
+	static uint8_t eulerstate = 0;
+	static uint8_t leibnizstate = 0;
+	uint16_t buttonstate = 0x0000;
+	PORTE.DIRSET = 0x08;
+	while(Picalculating == NULL) {
+		vTaskDelay(1);
+		
+	char pistring[12];
+	sprintf(&pistring[0], "PI: %.8f", M_PI);
+	vDisplayWriteStringAtPos(1,0, "%s", pistring);
 	initButtons();
+	
 	for(;;) {
 		updateButtons();
 		if(getButtonPress(BUTTON1) == SHORT_PRESSED) {
-			char pistring[12];
-			sprintf(&pistring[0], "PI: %.8f", M_PI);
-			vDisplayWriteStringAtPos(1,0, "%s", pistring);
+				xEventGroupSetBits(Picalculating, PICALC_BUTTON1_SHORT);
 		}
 		if(getButtonPress(BUTTON2) == SHORT_PRESSED) {
 				xEventGroupSetBits(Picalculating, PICALC_BUTTON2_SHORT);	
@@ -137,4 +120,28 @@ void controllerTask(void* pvParameters) {
 	}
 }
 
-	
+
+void leibniz_task(void* pvParameters) {
+	pi4 = 1;
+	uint32_t zaehler = 3;
+	float pi = 0;
+	for(;;) {
+		pi4 = pi4 - (1.0 / zaehler);
+		zaehler += 2;
+		pi4 = pi4 + (1.0 / zaehler);
+		zaehler += 2;
+		pi = pi4 * 4;
+	}
+}
+
+void euler_task(void* pvParameters) {
+	uint32_t x = 1;
+	float zaehler;
+	float pi = 0;
+	for(;;) {
+		zaehler = pow(x,2);
+		pisqr = pisqr + (1.0 / zaehler);
+		x += 1;
+		pi = sqrt(pisqr * 6);
+	}
+}	
