@@ -32,12 +32,15 @@
 
 float pi4;
 float pisqr;
+float pieuler;
+float pileibniz;
 
 
 void leibniz_task(void* pvParameters);
 void euler_task(void* pvParameters);
 void compare_Pi(void* pvParameters);
 void controllerTask(void* pvParameters);
+void vButtonTask(void *pvParameters);
 
 //Eventgroup und definitionen für PI Berechnungen
 
@@ -68,57 +71,44 @@ int main(void)
 	xTaskCreate( controllerTask, (const char *) "control_tsk", configMINIMAL_STACK_SIZE+150, NULL, 3, NULL);
 	xTaskCreate( leibniz_task, (const char *) "Leibniz_PI", configMINIMAL_STACK_SIZE+150, NULL, 1,NULL);
 	xTaskCreate( euler_task, (const char *) "Euler_PI", configMINIMAL_STACK_SIZE+150, NULL, 1,NULL);
+	xTaskCreate(vButtonTask, (const char *) "buttonTask", configMINIMAL_STACK_SIZE+10, NULL, 3, NULL);
 	vDisplayClear();
 	vDisplayWriteStringAtPos(0,0,"PI-Calc ASP");
-	//vDisplayWriteStringAtPos(2,0,"Algo waehlen");
-	//vDisplayWriteStringAtPos(3,0,"Leib - Euler");
+	
 	
 	vTaskStartScheduler();
 	return 0;
 }
 
 void controllerTask(void* pvParameters) {
-	static uint8_t eulerstate = 0;
+	(void) pvParameters;
+	static MENU_MAINSCREEN;
+	static uint8_t eulerstate;
 	static uint8_t leibnizstate = 0;
+	char pistring[12];
 	uint16_t buttonstate = 0x0000;
 	PORTE.DIRSET = 0x08;
 	while(Picalculating == NULL) {
-		vTaskDelay(1);
-		
-	char pistring[12];
-	sprintf(&pistring[0], "PI: %.8f", M_PI);
-	vDisplayWriteStringAtPos(1,0, "%s", pistring);
-	initButtons();
+			vTaskDelay(1);
+	}
 	
 	for(;;) {
-		updateButtons();
-		if(getButtonPress(BUTTON1) == SHORT_PRESSED) {
-				xEventGroupSetBits(Picalculating, PICALC_BUTTON1_SHORT);
-		}
-		if(getButtonPress(BUTTON2) == SHORT_PRESSED) {
-				xEventGroupSetBits(Picalculating, PICALC_BUTTON2_SHORT);	
-		}
-		if(getButtonPress(BUTTON3) == SHORT_PRESSED) {
-				xEventGroupSetBits(Picalculating, PICALC_BUTTON3_SHORT);
-		}
-		if(getButtonPress(BUTTON4) == SHORT_PRESSED) {
-				xEventGroupSetBits(Picalculating, PICALC_BUTTON4_SHORT);
-		}
-		if(getButtonPress(BUTTON1) == LONG_PRESSED) {
-				xEventGroupSetBits(Picalculating, PICALC_BUTTON1_LONG);
-		}
-		if(getButtonPress(BUTTON2) == LONG_PRESSED) {
-				xEventGroupSetBits(Picalculating, PICALC_BUTTON2_LONG);
-		}
-		if(getButtonPress(BUTTON3) == LONG_PRESSED) {
-				xEventGroupSetBits(Picalculating, PICALC_BUTTON3_LONG);
-		}
-		if(getButtonPress(BUTTON4) == LONG_PRESSED) {
-				xEventGroupSetBits(Picalculating, PICALC_BUTTON4_LONG);
-		}
-		vTaskDelay(10/portTICK_RATE_MS);
-	}
-}
+			PORTE.OUTCLR = 0x08;
+			buttonstate = xEventGroupGetBits(Picalculating);
+			vDisplayClear();
+			sprintf(&pistring[0], "PI: %.8f", M_PI);
+			vDisplayWriteStringAtPos(1,0, "%s", pistring);
+			switch(menuMode) {
+					case MENU_MAINSCREEN
+					if(leibnizstate == 0) {
+							vDisplayWriteStringAtPos(0,0,"pileibniz");
+							} else {
+							vDisplayWriteStringAtPos(0,0,"pieuler");
+							}
+					if(buttonstate & PICALC_BUTTON1_SHORT)
+						}
+					}
+	
 
 
 void leibniz_task(void* pvParameters) {
@@ -130,7 +120,7 @@ void leibniz_task(void* pvParameters) {
 		zaehler += 2;
 		pi4 = pi4 + (1.0 / zaehler);
 		zaehler += 2;
-		pi = pi4 * 4;
+		pileibniz = pi4 * 4;
 	}
 }
 
@@ -142,6 +132,39 @@ void euler_task(void* pvParameters) {
 		zaehler = pow(x,2);
 		pisqr = pisqr + (1.0 / zaehler);
 		x += 1;
-		pi = sqrt(pisqr * 6);
+		pieuler = sqrt(pisqr * 6);
 	}
 }	
+
+
+void vButtonTask(void * pvParameters) {
+		initButtons();
+		for(;;) {
+			updateButtons();
+			if(getButtonPress(BUTTON1) == SHORT_PRESSED) {
+				xEventGroupSetBits(Picalculating, PICALC_BUTTON1_SHORT);
+			}
+			if(getButtonPress(BUTTON2) == SHORT_PRESSED) {
+				xEventGroupSetBits(Picalculating, PICALC_BUTTON2_SHORT);
+			}
+			if(getButtonPress(BUTTON3) == SHORT_PRESSED) {
+				xEventGroupSetBits(Picalculating, PICALC_BUTTON3_SHORT);
+			}
+			if(getButtonPress(BUTTON4) == SHORT_PRESSED) {
+				xEventGroupSetBits(Picalculating, PICALC_BUTTON4_SHORT);
+			}
+			if(getButtonPress(BUTTON1) == LONG_PRESSED) {
+				xEventGroupSetBits(Picalculating, PICALC_BUTTON1_LONG);
+			}
+			if(getButtonPress(BUTTON2) == LONG_PRESSED) {
+				xEventGroupSetBits(Picalculating, PICALC_BUTTON2_LONG);
+			}
+			if(getButtonPress(BUTTON3) == LONG_PRESSED) {
+				xEventGroupSetBits(Picalculating, PICALC_BUTTON3_LONG);
+			}
+			if(getButtonPress(BUTTON4) == LONG_PRESSED) {
+				xEventGroupSetBits(Picalculating, PICALC_BUTTON4_LONG);
+			}
+			vTaskDelay(10/portTICK_RATE_MS);
+		}
+	}
