@@ -29,11 +29,13 @@
 #include "NHD0420Driver.h"
 
 #include "ButtonHandler.h"
+#include "semphr.h"
 
 float pi4;
 float pisqr;
 float pieuler;
 float pileibniz;
+
 
 
 void leibniz_task(void* pvParameters);
@@ -44,7 +46,7 @@ void vButtonTask(void *pvParameters);
 
 //Eventgroup und definitionen für PI Berechnungen
 
-#define PICALC_ACTIVE					1 << 0
+#define PICALC_ACTIVE					1 << 0	// diverse sachen entfernen und die resets einfügen
 #define PICALC_ALGO1					1 << 1
 #define PICALC_ALGO2					1 << 2
 #define PICALC_BUTTON1_SHORT			1 << 3
@@ -58,6 +60,8 @@ void vButtonTask(void *pvParameters);
 #define PICALC_BUTTON_ALL
 
 EventGroupHandle_t Picalculating;
+SemaphoreHandle_t ubergabe;
+uint8_t meinevariable = 0;
 
 
 
@@ -65,15 +69,17 @@ int main(void)
 {
     vInitClock();
 	vInitDisplay();
+	ubergabe = xSemaphoreCreateMutex();
 	
 	Picalculating = xEventGroupCreate();
 	
-	xTaskCreate( controllerTask, (const char *) "control_tsk", configMINIMAL_STACK_SIZE+150, NULL, 3, NULL);
+	xTaskCreate( controllerTask, (const char *) "control_tsk", configMINIMAL_STACK_SIZE+150, NULL, 1, NULL);
 	xTaskCreate( leibniz_task, (const char *) "Leibniz_PI", configMINIMAL_STACK_SIZE+150, NULL, 1,NULL);
 	xTaskCreate( euler_task, (const char *) "Euler_PI", configMINIMAL_STACK_SIZE+150, NULL, 1,NULL);
+	xTaskCreate( compare_Pi, (const char *) "compare_PI", configMINIMAL_STACK_SIZE+150, NULL, 1,NULL);
 	xTaskCreate(vButtonTask, (const char *) "buttonTask", configMINIMAL_STACK_SIZE+10, NULL, 3, NULL);
 	vDisplayClear();
-	vDisplayWriteStringAtPos(0,0,"PI-Calc ASP");
+	vDisplayWriteStringAtPos(0,0,"%s", pistring);
 	
 	
 	vTaskStartScheduler();
@@ -83,8 +89,7 @@ int main(void)
 void controllerTask(void* pvParameters) {
 	(void) pvParameters;
 	static MENU_MAINSCREEN;
-	static uint8_t eulerstate;
-	static uint8_t leibnizstate = 0;
+	static menuMode;
 	char pistring[12];
 	uint16_t buttonstate = 0x0000;
 	PORTE.DIRSET = 0x08;
@@ -97,17 +102,12 @@ void controllerTask(void* pvParameters) {
 			buttonstate = xEventGroupGetBits(Picalculating);
 			vDisplayClear();
 			sprintf(&pistring[0], "PI: %.8f", M_PI);
-			vDisplayWriteStringAtPos(1,0, "%s", pistring);
+			vDisplayWriteStringAtPos(1,0, "%s", pistring); // irgendwo hier kämen die 500ms hin, fragen wo und ob taskdelay
 			switch(menuMode) {
 					case MENU_MAINSCREEN
-					if(leibnizstate == 0) {
-							vDisplayWriteStringAtPos(0,0,"pileibniz");
-							} else {
-							vDisplayWriteStringAtPos(0,0,"pieuler");
-							}
-					if(buttonstate & PICALC_BUTTON1_SHORT)
+						if(buttonstate & PICALC_BUTTON1_SHORT) {
+							
 						}
-					}
 	
 
 
@@ -121,7 +121,11 @@ void leibniz_task(void* pvParameters) {
 		pi4 = pi4 + (1.0 / zaehler);
 		zaehler += 2;
 		pileibniz = pi4 * 4;
-	}
+		if(xSemaphoreTake(ubergabe, 10/portTICK_RATE_MS) == pdTRUE; { // hier die mutexes einfügen
+		meinevariable = pileibniz;
+		xSemaphoreGive(ubergabe);
+		vTaskDelay(10/portTICK_RATE_MS);
+		}
 }
 
 void euler_task(void* pvParameters) {
@@ -130,11 +134,24 @@ void euler_task(void* pvParameters) {
 	float pi = 0;
 	for(;;) {
 		zaehler = pow(x,2);
-		pisqr = pisqr + (1.0 / zaehler);
+		pisqr = pisqr + (1.0 / zaehler);	// dito mutexes
+		x += 1;
+		pieuler = sqrt(pisqr * 6);
+		}
+}	
+
+
+void compare_Pi(void* pvParameters) {
+	uint32_t x = 1;
+	float zaehler;
+	float pi = 0;
+	for(;;) {
+		zaehler = pow(x,2);
+		pisqr = pisqr + (1.0 / zaehler);	// dito mutexes
 		x += 1;
 		pieuler = sqrt(pisqr * 6);
 	}
-}	
+}
 
 
 void vButtonTask(void * pvParameters) {
@@ -142,7 +159,7 @@ void vButtonTask(void * pvParameters) {
 		for(;;) {
 			updateButtons();
 			if(getButtonPress(BUTTON1) == SHORT_PRESSED) {
-				xEventGroupSetBits(Picalculating, PICALC_BUTTON1_SHORT);
+				xEventGroupSetBits(Picalculating, PICALC_BUTTON1_SHORT); // algo sets von oben und weiterer knopf mit clearbits
 			}
 			if(getButtonPress(BUTTON2) == SHORT_PRESSED) {
 				xEventGroupSetBits(Picalculating, PICALC_BUTTON2_SHORT);
@@ -168,3 +185,6 @@ void vButtonTask(void * pvParameters) {
 			vTaskDelay(10/portTICK_RATE_MS);
 		}
 	}
+	
+	
+	
