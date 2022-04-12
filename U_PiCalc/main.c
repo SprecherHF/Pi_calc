@@ -96,13 +96,11 @@ void controllerTask(void* pvParameters) {
 			PORTE.OUTCLR = 0x08;
 			buttonstate = xEventGroupGetBits(Picalculating);
 			vDisplayClear();
+			pistring = printvariable;
 			sprintf(&pistring[0], "PI: %.8f", M_PI);
-			vDisplayWriteStringAtPos(1,0, "%s", pistring); // irgendwo hier kämen die 500ms hin, fragen wo und ob taskdelay
+			vDisplayWriteStringAtPos(1,0, "%s", pistring);
 			switch(menuMode) {
 					case MENU_MAINSCREEN
-						if(buttonstate & PICALC_BUTTON1_SHORT) {
-							
-						}
 	
 
 
@@ -146,7 +144,7 @@ void euler_task(void* pvParameters) {
 	float pi = 0;
 	for(;;) {
 		zaehler = pow(x,2);
-		pisqr = pisqr + (1.0 / zaehler);	// dito mutexes
+		pisqr = pisqr + (1.0 / zaehler);
 		x += 1;
 		pieuler = sqrt(pisqr * 6);
 		}
@@ -171,10 +169,10 @@ void vButtonTask(void * pvParameters) {
 		for(;;) {
 			updateButtons();
 			if(getButtonPress(BUTTON1) == SHORT_PRESSED) {
-				xEventGroupSetBits(Picalculating, PICALC_BUTTON1_SHORT); // algo sets von oben und weiterer knopf mit clearbits
+				xEventGroupSetBits(Picalculating, PICALC_ALGO1);
 			}
 			if(getButtonPress(BUTTON2) == SHORT_PRESSED) {
-				xEventGroupSetBits(Picalculating, PICALC_BUTTON2_SHORT);
+				xEventGroupSetBits(Picalculating, PICALC_ALGO2);
 			}
 			if(getButtonPress(BUTTON3) == SHORT_PRESSED) {
 				xEventGroupSetBits(Picalculating, PICALC_BUTTON3_SHORT);
