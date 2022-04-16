@@ -50,6 +50,7 @@ void vButtonTask(void *pvParameters);
 #define PICALC_ALGO2					1 << 1
 #define PICALC_RESET_ALGO1				1 << 2
 #define PICALC_RESET_ALGO2				1 << 3
+#define PICALC_COMPARE					1 << 4
 
 EventGroupHandle_t Picalculating;
 SemaphoreHandle_t ubergabe;
@@ -65,6 +66,7 @@ int main(void)
 	ubergabe = xSemaphoreCreateMutex();
 	Picalculating = xEventGroupCreate();
 	xEventGroupSetBits(Picalculating, PICALC_ALGO1);
+	xEventGroupSetBits(Picalculating, PICALC_ALGO2);
 	
 	
 	xTaskCreate( controllerTask, (const char *) "control_tsk", configMINIMAL_STACK_SIZE+150, NULL, 1, NULL);
@@ -147,17 +149,40 @@ void euler_task(void* pvParameters) {
 		pisqr = pisqr + (1.0 / zaehler);
 		x += 1;
 		pieuler = sqrt(pisqr * 6);
-		}
+	
+	
+		if((xEventGroupGetBits(Picalculating) & PICALC_RESET_ALGO2) == PICALC_RESET_ALGO2) {
+			xEventGroupClearBits(Picalculating, PICALC_RESET_ALGO2);
+			pileibniz = 0;
+			}
+		if(xSemaphoreTake(uebergabe, 10/portTICK_RATE_MS) == pdTRUE) {
+			uebergabevariable = pileibniz;
+			xSemaphoreGive(uebergabe);
+			}
+			vTaskDelay(10/portTICK_RATE_MS);
+			
+			for(;;) {
+				if(xSemaphoreTake(uebergabe, 10/portTICK_RATE_MS) == pdTRUE) {
+					printvariable = uebergabevariable;
+					xSemaphoreGive(uebergabe);
+				}
+				vDisplayClear();
+				vDisplayWriteStringAtPos(0,0,"Leibniz PI: %d", printvariable);
+				vTaskDelay(200/portTICK_RATE_MS);
+			}			
+	}
 }	
 
 
+// Der Compare Task  startet einfach im angewählten Algorythmus
+
 void compare_Pi(void* pvParameters) {
-	uint32_t x = 1;
-	float zaehler;
-	float pi = 0;
+	uint32_t comparestart = 1;
+	uint32_t comparestop = 1;
+	uint32_t pifuenftestelle = 3.14159;
 	for(;;) {
 		zaehler = pow(x,2);
-		pisqr = pisqr + (1.0 / zaehler);	// dito mutexes
+		pisqr = pisqr + (1.0 / zaehler);
 		x += 1;
 		pieuler = sqrt(pisqr * 6);
 	}
@@ -178,19 +203,26 @@ void vButtonTask(void * pvParameters) {
 				xEventGroupSetBits(Picalculating, PICALC_BUTTON3_SHORT);
 			}
 			if(getButtonPress(BUTTON4) == SHORT_PRESSED) {
-				xEventGroupSetBits(Picalculating, PICALC_BUTTON4_SHORT);
+				xEventGroupSetBits(Picalculating, PICALC_COMPARE;
 			}
 			if(getButtonPress(BUTTON1) == LONG_PRESSED) {
-				xEventGroupSetBits(Picalculating, PICALC_BUTTON1_LONG);
+				xEventGroupSetBits(Picalculating, PICALC_RESET_ALGO1);
 			}
 			if(getButtonPress(BUTTON2) == LONG_PRESSED) {
-				xEventGroupSetBits(Picalculating, PICALC_BUTTON2_LONG);
+				xEventGroupSetBits(Picalculating, PICALC_RESET_ALGO2);
 			}
 			if(getButtonPress(BUTTON3) == LONG_PRESSED) {
 				xEventGroupSetBits(Picalculating, PICALC_BUTTON3_LONG);
 			}
-			if(getButtonPress(BUTTON4) == LONG_PRESSED) {
-				xEventGroupSetBits(Picalculating, PICALC_BUTTON4_LONG);
+			if(getButtonPress(BUTTON3) == LONG_PRESSED) {
+				uint8_t algostatus = (xEventGroupGetBits(meineEventGroup) & 0x0300 ) >> 8;
+				if(algostatus == 0x01) {
+					xEventGroupClearBits(meineEventGroup, ALGO1);
+					xEventGroupSetBits(meineEventGroup, ALGO2);
+					} else {
+					xEventGroupClearBits(meineEventGroup, ALGO2);
+					xEventGroupSetBits(meineEventGroup, ALGO1);
+				}
 			}
 			vTaskDelay(10/portTICK_RATE_MS);
 		}
