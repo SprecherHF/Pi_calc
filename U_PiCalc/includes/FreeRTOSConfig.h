@@ -76,19 +76,18 @@
 //#define configTICK_RATE_HZ			( ( TickType_t ) 1000 )
 #define configMAX_PRIORITIES			( 4 )
 #define configMINIMAL_STACK_SIZE		( ( unsigned short ) 200 )
-#define configTOTAL_HEAP_SIZE			( (size_t ) ( 3000 ) )
+#define configTOTAL_HEAP_SIZE			( (size_t ) ( 6000 ) )
 #define configMAX_TASK_NAME_LEN			( 8 )
 #define configUSE_TRACE_FACILITY		1
 #define configUSE_16_BIT_TICKS			0
 #define configIDLE_SHOULD_YIELD			1
 #define configCHECK_FOR_STACK_OVERFLOW	2
 
-#define configUSE_MUTEXES				1
-
-
 /* Co-routine definitions. */
 #define configUSE_CO_ROUTINES 		1
 #define configMAX_CO_ROUTINE_PRIORITIES ( 2 )
+
+#define configUSE_MUTEXES				1
 
 /* Set the following definitions to 1 to include the API function, or zero
 to exclude the API function. */
